@@ -1,0 +1,215 @@
+---
+name: rule-for-the-brandguard-project
+description: Context rules for BrandGuard AI Adobe Express Add-on development
+globs:
+  - "brandguard-ai/**"
+---
+
+# BrandGuard AI Project Context
+
+## What is BrandGuard AI?
+
+BrandGuard AI is an Adobe Express Add-on that audits documents for brand compliance. It checks colors, fonts, and WCAG contrast, then offers one-click fixes to bring elements into compliance.
+
+## Dual-Runtime Architecture
+
+This add-on uses Adobe Express's dual-runtime system:
+
+1. **UI Runtime (iframe)** - React panel in `src/ui/`
+   - Entry: `src/ui/index.tsx`
+   - Main component: `src/ui/components/App.tsx`
+   - Uses Add-on UI SDK (`addOnUISdk`)
+
+2. **Document Sandbox** - Secure runtime for document manipulation
+   - Entry: `src/sandbox/code.ts`
+   - Uses Express Document SDK (`editor`, `fonts`)
+   - Uses Document Sandbox SDK (`addOnSandboxSdk`)
+
+Communication between runtimes uses `runtime.exposeApi()` and `runtime.apiProxy()`.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/sandbox/code.ts` | Document scanning, color/font fixing |
+| `src/ui/components/App.tsx` | Main React UI, audit logic, violation cards |
+| `src/ui/components/BrandKitCreator.tsx` | Brand Kit Creator modal UI (NEW) |
+| `src/ui/components/BrandKitSelector.tsx` | Brand kit switching dropdown menu (NEW) |
+| `src/useBrandKit.ts` | Brand kit loading, validation, storage, registry |
+| `src/brandConfig.ts` | Helper functions for color/font checks |
+| `src/brand-kit.json` | Default brand configuration |
+| `src/models/DocumentSandboxApi.ts` | TypeScript interface for sandbox API |
+
+## Sandbox API Methods
+
+The `DocumentSandboxApi` interface (defined in `src/models/DocumentSandboxApi.ts`) exposes:
+
+- `scanDocument()` - Returns all elements and font violations
+- `fixColor(nodeId, hexColor)` - Apply a color fix
+- `fixFont(nodeId, fontFamily)` - Apply a font fix
+- `restoreColor(nodeId, hexColor)` - Undo a color fix
+- `restoreFont(nodeId, fontName)` - Undo a font fix
+
+## Brand Kit Structure (Extended)
+
+The brand kit JSON supports two formats for backward compatibility:
+
+### Legacy Format (still supported)
+```json
+{
+  "name": "Brand Name",
+  "allowedColors": ["#HEX1", "#HEX2"],
+  "allowedFonts": ["Arial", "Georgia"],
+  "accessibility": { "minContrast": 4.5 }
+}
+```
+
+### Extended Format (with typography and rules)
+```json
+{
+  "name": "Brand Name",
+  "typography": {
+    "title": { "font": "Georgia" },
+    "body": { "font": "Arial" },
+    "caption": { "font": "Arial" }
+  },
+  "typographyRules": {
+    "allowBold": true,
+    "allowItalic": true,
+    "allowUnderline": false,
+    "minFontSize": 12,
+    "maxFontSize": 72
+  },
+  "colors": {
+    "primary": ["#232D4B", "#E57200"],
+    "secondary": ["#FFFFFF", "#DADADA"]
+  },
+  "customRules": {
+    "noBoldAnywhere": false,
+    "singleFontPerType": true,
+    "enforceMinBodySize": true
+  },
+  "accessibility": { "minContrast": 4.5 }
+}
+```
+
+### Field Mappings (UI → JSON)
+
+| UI Input | JSON Field | Notes |
+|----------|------------|-------|
+| Title font dropdown | `typography.title.font` | Required, single font |
+| Body font dropdown | `typography.body.font` | Required, single font |
+| Caption font dropdown | `typography.caption.font` | Required, single font |
+| Allow bold toggle | `typographyRules.allowBold` | Boolean |
+| Allow italic toggle | `typographyRules.allowItalic` | Boolean |
+| Allow underline toggle | `typographyRules.allowUnderline` | Boolean |
+| Min font size input | `typographyRules.minFontSize` | Number, optional |
+| Max font size input | `typographyRules.maxFontSize` | Number, optional |
+| Primary colors input | `colors.primary` | Array of hex values |
+| Secondary colors input | `colors.secondary` | Array of hex values |
+| Custom rule checkboxes | `customRules.*` | Boolean flags |
+
+### Backward Compatibility
+
+When loading a brand kit:
+- If `typography` exists, extract fonts from `typography.*.font` into `allowedFonts`
+- If `colors` exists, merge `colors.primary` and `colors.secondary` into `allowedColors`
+- Legacy kits without extended fields continue to work unchanged
+
+## Brand Kit Creator UI
+
+A modal-based UI allowing designers to create brand kits without writing JSON manually.
+
+### Entry Point
+- Button labeled "Create Brand Kit" in the Brand Kit section of `App.tsx`
+- Opens modal on click (does NOT auto-open)
+
+### UI Sections
+
+1. **Typography (Required)**
+   - Title font: single dropdown selection
+   - Body font: single dropdown selection
+   - Caption font: single dropdown selection
+   - Font options populated from `KNOWN_AVAILABLE_FONTS` in `useBrandKit.ts`
+
+2. **Typography Rules (Optional)**
+   - Allow bold: toggle
+   - Allow italic: toggle
+   - Allow underline: toggle
+   - Min font size: number input
+   - Max font size: number input
+
+3. **Color Rules (Optional)**
+   - Primary colors: array of color picker inputs
+   - Secondary colors: array of color picker inputs
+
+4. **Custom Rules (Optional, Checkbox Presets Only)**
+   - "No bold text anywhere"
+   - "Only one font per text type"
+   - "Body text must be at least X px"
+   - No free-text rule logic
+
+### Validation & Output
+- Validation occurs on form submission
+- Must pass existing `validateBrandKit()` schema
+- On success: stored via same flow as uploaded JSON (localStorage)
+- On failure: display human-readable error, no partial save
+
+## Brand Kit Switching
+
+### Brand Kit Selector Component
+- Dropdown menu component (`BrandKitSelector.tsx`)
+- Lists all available brand kits (default + user-created)
+- Displays currently active brand kit name
+- Switching triggers validation pipeline refresh
+
+### Brand Kit Registry
+- Located in `useBrandKit.ts`
+- Manages multiple brand kits via localStorage keys
+- Registry key: `brandguard_brand_kit_registry`
+- Active kit key: `brandguard_active_brand_kit`
+
+### Integration Points
+- When active brand changes:
+  1. `BrandKitManager.setActiveBrandKit(kitId)` called
+  2. `notifyListeners()` fires to update React state
+  3. `useBrandKit()` hook returns new active kit
+  4. Components re-render with new brand rules
+  5. If audit has run, violations refresh automatically
+
+## Important Patterns
+
+- **Singleton pattern**: `BrandKitManager` in `useBrandKit.ts` caches the brand kit
+- **React hook**: `useBrandKit()` provides reactive brand kit access in components
+- **Font PostScript mapping**: `fixFont` maps family names to PostScript names for the SDK
+- **Color normalization**: All hex colors are normalized to uppercase 6-digit format
+- **Schema validation**: `validateBrandKit()` validates both legacy and extended formats
+
+## MCP Server
+
+Use the Express Add-on MCP server tools for:
+- `get_relevant_documentations` - Documentation about Express Add-ons
+- `get_typedefinitions` - TypeScript definitions for `express-document-sdk`, `add-on-sdk-document-sandbox`, or `iframe-ui`
+
+## Scripts
+
+- `npm run start` - Development server
+- `npm run build` - Production build
+- `npm run package` - Create distributable package
+
+## Common Tasks
+
+- **Add a brand color**: Edit `src/brand-kit.json` allowedColors array OR use Brand Kit Creator UI
+- **Add an allowed font**: Edit `src/brand-kit.json` allowedFonts array, and add PostScript mapping in `src/sandbox/code.ts` (`fontPostScriptMap`)
+- **Change default contrast threshold**: Edit `src/brand-kit.json` accessibility.minContrast
+- **Add new sandbox API**: Update interface in `src/models/DocumentSandboxApi.ts`, implement in `src/sandbox/code.ts`, call from `src/ui/components/App.tsx`
+- **Create brand kit via UI**: Click "Create Brand Kit" button, fill form, submit
+- **Switch brand kits**: Use Brand Kit Selector dropdown in UI header
+
+## Non-Goals (Constraints)
+
+- Do NOT build a full brand-kit management system
+- Do NOT add backend APIs (all storage is localStorage)
+- Do NOT change how violations are computed (reuse existing validation)
+- Do NOT introduce free-form scripting or rule logic
+- Do NOT auto-apply brand kits to documents

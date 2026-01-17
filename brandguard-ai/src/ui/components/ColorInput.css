@@ -1,0 +1,168 @@
+/* ============================================================================
+   COLOR INPUT - REFINED MINIMALIST DESIGN
+   Clean, intuitive color picker component
+   ============================================================================ */
+
+.color-input-container {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  transition: all 0.15s ease;
+}
+
+.color-input-container:focus-within {
+  border-color: #0265DC;
+  box-shadow: 0 0 0 3px rgba(2, 101, 220, 0.08);
+}
+
+/* Color Picker Wrapper */
+.color-input-picker-wrapper {
+  flex-shrink: 0;
+}
+
+.color-input-picker-label {
+  display: block;
+  cursor: pointer;
+  position: relative;
+}
+
+.color-input-picker {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+/* Visual Color Swatch */
+.color-input-swatch {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.color-input-swatch:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.color-input-swatch-text {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-family: 'SF Mono', 'Monaco', monospace;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Text Input Wrapper */
+.color-input-text-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.color-input-text {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+  text-transform: uppercase;
+  color: #1a1a2e;
+  background: #ffffff;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+}
+
+.color-input-text:focus {
+  outline: none;
+  border-color: #0265DC;
+  box-shadow: 0 0 0 3px rgba(2, 101, 220, 0.08);
+}
+
+.color-input-text::placeholder {
+  color: #94a3b8;
+  text-transform: none;
+}
+
+.color-input-invalid {
+  border-color: #ef4444;
+  background-color: #fef2f2;
+}
+
+.color-input-invalid:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.color-input-error-icon {
+  position: absolute;
+  right: 14px;
+  color: #ef4444;
+  font-size: 1.125rem;
+  pointer-events: none;
+}
+
+/* Remove Button */
+.color-input-remove {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #fef2f2;
+  color: #ef4444;
+  border-radius: 8px;
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.color-input-remove:hover {
+  background: #fee2e2;
+  transform: scale(1.05);
+}
+
+.color-input-remove:active {
+  transform: scale(0.95);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .color-input-container {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .color-input-picker-wrapper {
+    align-self: center;
+  }
+
+  .color-input-swatch {
+    width: 80px;
+    height: 80px;
+  }
+
+  .color-input-remove {
+    align-self: flex-end;
+  }
+}

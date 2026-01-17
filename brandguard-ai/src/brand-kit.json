@@ -1,0 +1,15 @@
+{
+  "name": "Enterprise Pro",
+  "allowedColors": [
+    "#232D4B",
+    "#E57200",
+    "#FFFFFF",
+    "#DADADA",
+    "#EF3F6B",
+    "#62BB46"
+  ],
+  "allowedFonts": ["Arial", "Georgia"],
+  "accessibility": {
+    "minContrast": 4.5
+  }
+}
